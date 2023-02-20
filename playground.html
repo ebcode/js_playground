@@ -1,0 +1,261 @@
+<!--
+   playground.html
+   
+   Copyright 2022 a <a@01>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<title>untitled</title>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<meta name="generator" content="Geany 1.38" />
+	<style>
+		body{
+			margin:0;
+			padding:15px;
+			background: #ccc;
+			background-image: url('./body_bg.png'); 
+		}
+		canvas{
+			/* border:1px solid; */
+			background:peru;
+			/* background-image: url('./grid_bg.png'); */
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="canvas" width="640" height="640"></canvas>
+</body>
+
+
+<script>
+
+// Get the canvas element from the HTML page
+var canvas = document.getElementById('canvas');
+
+// Create a 2D drawing context for the main canvas
+var mainCtx = canvas.getContext('2d');
+
+// Create an off-screen canvas
+var offscreenCanvas = document.createElement('canvas');
+
+// Set the dimensions of the off-screen canvas to match the main canvas
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+
+// Create a 2D drawing context for the off-screen canvas
+var offscreenCtx = offscreenCanvas.getContext('2d');
+
+const tileSize = 16;
+
+function drawTile(i, x, y) {
+  //console.log('drawing tile?');
+  mainCtx.drawImage(i, x * tileSize, y * tileSize);
+}
+
+//try manually:
+var anImage = new Image();
+anImage.src = 'grass_16.png';
+mainCtx.drawImage(anImage, 0, 0);
+
+const tiles = [
+  './grass_16.png',
+  './eaten_grass_16.png',
+  './rock_16.png'
+];
+
+a_tile = function(x,y,img,type,percent,index){
+	var o = {};
+	o.image=img;
+	o.x=x;
+	o.y=y;
+	o.type=type;
+	o.percent=percent;
+	o.index=index;
+	return o;
+}
+
+//make a tile of each type
+tile_types = [];
+
+tile_types.push(a_tile(0,0,'./grass_16.png','grass',0.80,0));
+tile_types.push(a_tile(0,0,'./eaten_grass_16.png','eaten grass',0.15,1));
+tile_types.push(a_tile(0,0,'./rock_16.png','rock',0.05,2));
+
+//verify that percentages add to 1
+let tile_percent_total=0;
+for(x in tile_types){
+	tile_percent_total += tile_types[x].percent;
+}
+
+console.log('tile_percent_total: ' + tile_percent_total);
+
+if(tile_percent_total !== 1.0){
+	if(tile_percent_total <= 1.0){		
+		console.log('tile percentages are too low.');
+	} else {
+		console.log('tile percentages are too high.');
+	}
+	throw error;
+}
+
+tile_percent_lookup = Array.from({length:100}, () => 1);
+
+let i = 0;
+
+for(let x=0; x<tile_types.length; x++){
+	this_many_of_this_type = i + (tile_types[x].percent*100);
+
+	for(i = i; i < this_many_of_this_type ; i++){
+		console.log('tile_lookup: ' + i + ' ...');
+		tile_percent_lookup[i] = tile_types[x];
+	}
+}
+
+
+//first load all the images
+async function loadImage(imageUrl) {
+    let img;
+    const imageLoadPromise = new Promise(resolve => {
+        img = new Image();
+        img.onload = resolve;
+        img.src = imageUrl;
+    });
+
+    await imageLoadPromise;
+    console.log("image loaded");
+    return img;
+}
+
+const loaded_tiles = [];
+
+for( i in tiles){
+	loadImage(tiles[i]).then((image, i) => {
+		loaded_tiles.push(image);
+		console.log('loaded image: ' + loaded_tiles[loaded_tiles.length-1].src);
+		console.log('loaded: ' + loaded_tiles.length + ' images so far');
+		if(loaded_tiles.length == tiles.length){
+			console.log('ALL IMAGES LOADED, drawing grid');
+			drawGrid();
+		}
+	});
+}
+
+const grid = [
+  [0, 1, 2],
+  [0, 1, 2],
+  [0, 1, 2]
+];
+
+
+function init_random_grid(w,h,vals){
+  var mygrid = Array.from({ length: h }, () => 
+  Array.from({ length: w }, () => false)
+	);
+
+  for (let y = 0; y < w; y++) {
+    for (let x = 0; x < h; x++) {
+		//choose random val from val
+		//console.log(Math.floor(Math.random()*vals.length));
+		let tile_lookup = Math.floor(Math.random()*100);
+		mygrid[x][y] = tile_percent_lookup[tile_lookup].index;
+    }
+  }
+  return mygrid;
+}
+
+const myvals = [0,1,2];
+
+rand_grid = init_random_grid(40,40,myvals);
+
+console.log(rand_grid);
+
+/*
+// Set the fill color to blue
+offscreenCtx.fillStyle = 'rgb(0, 0, 200)';
+
+// Define the position of the rectangle
+var x = 10;
+var y = 10;
+var width = 50;
+var height = 50;
+*/
+
+
+function drawGrid(){
+	
+for (let y = 0; y < rand_grid.length; y++) {
+  for (let x = 0; x < rand_grid[y].length; x++) {
+    var i = new Image();
+    i.src = tiles[rand_grid[y][x]];
+    //console.log(tiles[grid[y][x]]);
+    //console.log(i);
+    //console.log(x);
+    //console.log(y);
+
+		drawTile(i, x, y);
+
+  }
+}
+
+}
+
+
+</script>
+
+<!-- include other scripts here 
+<script src="chat_states.js"></script>
+<script src="alife.js"></script>
+-->
+
+<script>
+// This function is called repeatedly to create the animation
+function animate() {
+	
+   //drawGrid();
+  // Update the position of the rectangle
+//  x += 5;
+//  y += 5;
+
+  // Draw the rectangle on the off-screen canvas
+  //offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+  //offscreenCtx.fillRect(x, y, width, height);
+
+
+ // Clear the canvas before drawing the next frame
+  //mainCtx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Copy the off-screen canvas to the main canvas
+  //mainCtx.drawImage(offscreenCanvas, 0, 0);
+
+  // Request the next animation frame
+  requestAnimationFrame(animate);
+}
+
+// Start the animation
+//requestAnimationFrame(animate);
+
+</script>
+
+</html>
